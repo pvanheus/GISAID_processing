@@ -1,0 +1,32 @@
+---
+title: "Where are SARS-CoV-2 sequences deposited?"
+format:
+  html:
+    code-fold: true
+jupyter: python3
+---
+
+A quick visualation of where SARS-CoV-2 data is deposited, organised by country. This chart is created using 
+[altair](https://altair-viz.github.io/) based on data numbers of sequences and where they are deposited collated by Chaoran Chen. The data is transformed using the utility functions from
+[this repo](https://github.com/pvanheus/GISAID_processing).
+
+```{python}
+import gisaid_utils
+
+import altair as alt
+import numpy as np
+
+countries = gisaid_utils.get_countries()
+
+data = gisaid_utils.get_nextstrain_sequence_counts('number_of_sequences_by_country_20220806.csv', countries)
+data = data.melt(id_vars=['country', 'continent', 'iso_2_code'], value_vars=['GISAID sequences', 'Open sequences'], var_name='db_name', value_name='num_sequences')
+```
+
+```{python}
+alt.Chart(data).mark_point().encode(
+    x=alt.X('country', sort='-y'),
+    y=alt.Y('num_sequences', scale=alt.Scale(type="symlog")),
+    color='db_name',
+    tooltip=alt.Tooltip(['country', 'db_name', 'num_sequences'])
+)
+```
