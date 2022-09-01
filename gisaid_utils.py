@@ -286,6 +286,7 @@ gisaid_country_to_country_name = {
     'Gambia': 'Gambia, Republic of the',
     'Ghana': 'Ghana, Republic of',
     'Guinea': 'Guinea, Republic of',
+    'Guinea-Bissau': 'Guinea-Bissau, Republic of',
     'Kenya': 'Kenya, Republic of',
     'Lesotho': 'Lesotho, Kingdom of',
     'Liberia': 'Liberia, Republic of',
@@ -319,5 +320,17 @@ gisaid_country_to_country_name = {
     'Zimbabwe': 'Zimbabwe, Republic of',    
 }
 
-def country_name_to_iso3(country_name, countries_df):
-    return countries_df[countries_df.Country_Name == gisaid_country_to_country_name.get(country_name)].Three_Letter_Country_Code.iloc[0]
+def country_name_to_iso3(country_name: str, countries_df: pd.DataFrame):
+    selected_countries = countries_df[countries_df.Country_Name == gisaid_country_to_country_name.get(country_name)].Three_Letter_Country_Code
+    if len(selected_countries) != 1:
+        raise ValueError(f"Wrong number of matches for {country_name}: {len(selected_countries)}")
+    return selected_countries.iloc[0]
+
+def get_income_groups(url: str = 'https://databankfiles.worldbank.org/data/download/site-content/CLASS.xlsx'):
+    income_groups = pd.read_excel(url, usecols=['Code', 'Region', 'Income group']).set_index('Code')
+    return income_groups
+
+def insert_income_groups(df, countries_df, income_groups_df, column_name):
+    df.insert(len(df.columns), 'iso3', df[column_name].apply(lambda c: country_name_to_iso3(c, countries_df)))
+    df = df.join(income_groups_df, on='iso3')
+    return df
